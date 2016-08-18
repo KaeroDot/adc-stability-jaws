@@ -16,8 +16,6 @@ wv.frlist = [150 300 600 1200];
 wv.periods = 10;
 % path to the qwtb:
 qwtbpath = '~/qwtb/qwtb';
-% used on supercomputer?
-data.cokl = 1;
 
 % ------------------ basic setup ------------------ %<<<1
 % create results directory
@@ -28,6 +26,10 @@ endif
 
 % add QWTB path:
 addpath(qwtbpath);
+
+% automatic detection of supercomputer named "cokl":
+[s, o] = system('uname -n');
+data.cokl = strcmpi(deblank(o), 'vsmp1');
 
 % ------------------ parse info file ------------------ %<<<1
 infostr = infoload([data.filenamepart '.bin']);
@@ -74,8 +76,11 @@ endfor
 [wv.frgrid, wv.ampgrid] = meshgrid(wv.amplist, wv.frlist);
 
 % ------------------ parallel processing of data ------------------ %<<<1
+% if not on supercomputer, set only part of data: 
+if ~data.cokl
+        data.pointl = 960000 + ignorepoints + 1;
+endif
 % create a cell of data starting positions:
-data.pointl = 960000 + ignorepoints + 1;
 points = [ignorepoints + 1 : sum(wv.pointsec) : data.pointl];
 % vector of times of starts of metaperiods:
 % (first has time == 0)
@@ -96,8 +101,18 @@ for i = 1:length(points)-1
         paramcell{i} = param;
 endfor
 
+% number of CPU used in calculation, just for easy switching:
+if data.cokl
+        procno = 50;
+else
+        procno = 4;
+endif
+
+% the calculation itself:
+res = parcellfun(procno, @load_metaperiod, paramcell, 'verboselevel', 1);
+
+% methods for testing purposes:
 %%%res = cellfun(@load_metaperiod, paramcell);
-res = parcellfun(4, @load_metaperiod, paramcell, 'verboselevel', 1);
 %%%for i = 1:length(paramcell)
 %%%        i
 %%%        res(i) = load_metaperiod(paramcell{i});
