@@ -26,15 +26,8 @@ if ~exist(data.resdir, 'dir')
         mkdir(data.resdir);
 endif
 
-% add qwtb path:
+% add QWTB path:
 addpath(qwtbpath);
-
-if data.cokl
-        %graphics_toolkit('gnuplot')
-        %% set environment value of GNUTERM
-        %terminal = getenv ("GNUTERM")
-        %setenv ("GNUTERM", "postscript")
-endif
 
 % ------------------ parse info file ------------------ %<<<1
 infostr = infoload([data.filenamepart '.bin']);
@@ -80,58 +73,8 @@ for i = 1:length(wv.pointsec)
 endfor
 [wv.frgrid, wv.ampgrid] = meshgrid(wv.amplist, wv.frlist);
 
-% ------------------ process data file ------------------ %<<<1
-% % number of processed points. must be smaller than digits in realmax (cca 15 digits) 
-% points = uint64(0);
-% % open file:
-% fid = fopen([data.filenamepart '.bin'], 'r');
-% if ignorepoints > 0
-%         % read points to ignore:
-%         [ignored, count] = fread(fid, ignorepoints, 'int32', 0, 'ieee-le');
-%         points = points + size(ignored,1);
-%         if data.wvplot
-%                 figure('visible','off')
-%                 plot(ignored)
-%                 print_cpu_indep([data.resdir filesep 'wvignored'], data.cokl)
-%         endif
-% endif
-% 
-% % main loop:
-% res = [];
-% loopcount = 0;
-% while points < data.pointl
-% for ttt = 1:4
-%         loopcount = loopcount + 1;
-%         % calculate percentage of processed data:
-%         % XXX probably this can overflow in t variable for long files:
-%         per = double(points)./double(data.pointl)*100;
-%         disp([num2str(per) ' % processed']);
-%         % calculate timestamp of the first sample of the following metaperiod:
-%         % (first sample has time == 0)
-%         % XXX probably this can overflow in t variable for long files:
-%         t = double(points - ignorepoints)./adc.fs;
-%         % read points for whole metaperiod:
-%         [tmp, count] = fread(fid, sum(wv.pointsec), 'int32', 0, 'ieee-le');
-%         points = points + size(tmp,1);
-%         % if full metaperiod read:
-%         if size(tmp,1) == sum(wv.pointsec)
-%                 % get real values:
-%                 tmp = adc.offset + tmp.*adc.gain;
-%                 % plot it:
-%                 if data.wvplot
-%                         figure('visible','off')
-%                         plot(tmp);
-%                         print_cpu_indep([data.resdir filesep 'wv'], data.cokl)
-%                 endif
-%                 % and process data
-%                 res = [res calc_metaperiod(loopcount, t, tmp, wv, adc, data)];
-%         endif
-% %%%endfor
-% endwhile
-% % close file:
-% fclose(fid);
 % ------------------ parallel processing of data ------------------ %<<<1
-% create a cell of data starts:
+% create a cell of data starting positions:
 data.pointl = 960000 + ignorepoints + 1;
 points = [ignorepoints + 1 : sum(wv.pointsec) : data.pointl];
 % vector of times of starts of metaperiods:
@@ -153,13 +96,12 @@ for i = 1:length(points)-1
         paramcell{i} = param;
 endfor
 
-%%% res = [];
-%%% for i = 1:length(points)
-%%%         res = [res load_metaperiod(paramcell{i})];
-%%% endfor
-
 %%%res = cellfun(@load_metaperiod, paramcell);
 res = parcellfun(4, @load_metaperiod, paramcell, 'verboselevel', 1);
+%%%for i = 1:length(paramcell)
+%%%        i
+%%%        res(i) = load_metaperiod(paramcell{i});
+%%%endfor
 
 % ------------------ save data ------------------ %<<<1
 save('-binary', [data.resdir filesep 'proc_data.bin'])
@@ -175,9 +117,4 @@ disp('points expected:')
 data.pointl
 if points < data.pointl
         disp('number of points in binary file is smaller than in info file. missing data!')
-endif
-
-if data.cokl
-        % revert value of GNUTERM:
-        %setenv ("GNUTERM", terminal)
 endif

@@ -21,10 +21,31 @@ for i = 1:length(wv.pointsec)
         CS.verbose = 0;
         % ------------------ PSFE ------------------ %<<<2
         DI.fs.v = adc.fs;
-        DI.y.v = y;
+        DI.y.v = y';
         res.S(i).PSFE = qwtb('PSFE', DI, CS);
         % ------------------ SP-FFT ------------------ %<<<2
         res.S(i).FFT = qwtb('SP-FFT', DI, CS);
+        % ------------------ FPNLSF ------------------ %<<<2
+        DI.fest.v = wv.frsec(i);
+        res.S(i).FPNLSF = qwtb('FPNLSF', DI, CS);
+        % ------------------ SFDR ------------------ %<<<2
+        res.S(i).SFDR = qwtb('SFDR', DI, CS);
+        % ------------------ SFDR from FFT ------------------ %<<<2
+        % range of FFT: 
+        % from 2 to 80times multiple of main freq:
+        idmin = 2;
+        idmax = find(res.S(i).FFT.f.v > wv.frsec(i)*80);
+        idmax = idmax(1);
+        tmp = res.S(i).FFT.A.v(idmin:idmax);
+        % highest point:
+        highp = max(tmp);
+        % remove highest point:
+        highpind = find(tmp == highp)(1);
+        tmp(highpind) = 0; 
+        % get second highest point:
+        high2p = max(tmp);
+        % calculat sort of SFDR in dBc:
+        res.S(i).SFDR_FFT = 20*log10(highp/high2p);
         % ------------------ reformat result to a matrix ------------------ %<<<2
         % amplitude is row, frequency is column
         idcol = find(wv.frlist == res.S(i).fr_nom);
@@ -33,6 +54,9 @@ for i = 1:length(wv.pointsec)
         idrow = idrow(1);
         res.A_PSFE(idrow, idcol) = res.S(i).PSFE.A.v;
         res.A_FFT(idrow, idcol) = max(res.S(i).FFT.A.v);
+        res.A_FPNLSF(idrow, idcol) = res.S(i).FPNLSF.A.v;
+        res.SFDR(idrow, idcol) = res.S(i).SFDR.SFDRdBc.v;
+        res.SFDR_FFT(idrow, idcol) = res.S(i).SFDR_FFT;
 endfor
 
 endfunction

@@ -4,11 +4,15 @@ function calc_conc_data(res, tvec, wv, adc, data)
 % indexes:      row          column          sheet
 % variable:     amplitude    frequency       time
 cal_mat_PSFE = cat(3, res.A_PSFE);
-cal_mat_FFT = cat(3, res.A_PSFE);
+cal_mat_FFT = cat(3, res.A_FFT);
+cal_mat_FPNLSF = cat(3, res.A_FPNLSF);
+cal_mat_SFDR = cat(3, res.SFDR);
+cal_mat_SFDR_FFT = cat(3, res.SFDR_FFT);
 
 % ------------------ plot per method ------------------ %<<<1
 plot_cal_mat_one_method(tvec, wv.sectimestart, cal_mat_PSFE, 'PSFE', wv, data);
 plot_cal_mat_one_method(tvec, wv.sectimestart, cal_mat_FFT, 'FFT', wv, data);
+plot_cal_mat_one_method(tvec, wv.sectimestart, cal_mat_FPNLSF, 'FPNLSF', wv, data);
 
 % ------------------ plot per calibration point ------------------ %<<<1
 plot_types = {'kx-', 'rx-', 'gx-', 'bx-', 'cx-', 'mx-', 'ko-', 'ro-', 'go-', 'bo-', 'co-', 'mo-', 'k*-', 'r*-', 'g*-', 'b*-', 'c*-', 'm*-',};
@@ -21,15 +25,16 @@ for j = 1:size(cal_mat_PSFE,2)
                 count = count + 1;
                 t = tvec + wv.sectimestart(i, j);
 
-                % time developement %<<<2
+                % time developement of amplitude %<<<2
                 figure('visible','off')
                 hold on
                 title(['time developement, cal. point: A=' num2str(wv.amplist(i)) ', f=' num2str(wv.frlist(j))]);
                 plot(t, cal_mat_PSFE(i, j, :)(:)', plot_types{1})
                 plot(t, cal_mat_FFT(i, j, :)(:)', plot_types{2})
+                plot(t, cal_mat_FPNLSF(i, j, :)(:)', plot_types{3})
                 xlabel('t (s)');
                 ylabel('U (V)');
-                legend('PSFE', 'FFT', 'location', 'southoutside','orientation','horizontal')
+                legend('PSFE', 'FFT', 'FPNLSF', 'location', 'southoutside','orientation','horizontal')
                 legend('boxoff')
                 print_cpu_indep([data.resdir filesep 'whole_timedev_' num2str(count, '%02d') '-' num2str(i, '%02d') '-' num2str(j, '%02d')], data.cokl)
                 hold off
@@ -43,13 +48,26 @@ for j = 1:size(cal_mat_PSFE,2)
                 figure('visible','off')
                 hold on
                 title(['allan dev., cal. point: A=' num2str(wv.amplist(i)) ', f=' num2str(wv.frlist(j))]);
-                plot(DO_ADEV.tau.v, DO_ADEV.adev.v, plot_types{1})
-                plot(DO_OADEV.tau.v, DO_OADEV.oadev.v, plot_types{2})
+                plot(DO_ADEV.tau.v, DO_ADEV.adev.v, '-k')
+                plot(DO_OADEV.tau.v, DO_OADEV.oadev.v, '-r')
                 xlabel('tau (s)');
                 ylabel('allan dev (V)');
                 legend('ADEV', 'OADEV', 'location', 'southoutside','orientation','horizontal')
                 legend('boxoff')
-                print_cpu_indep([data.resdir filesep 'whole_aedev_' num2str(count, '%02d') '-' num2str(i, '%02d') '-' num2str(j, '%02d')], data.cokl)
+                print_cpu_indep([data.resdir filesep 'whole_adev_' num2str(count, '%02d') '-' num2str(i, '%02d') '-' num2str(j, '%02d')], data.cokl)
+                hold off
+
+                % time developement of amplitude %<<<2
+                figure('visible','off')
+                hold on
+                title(['spurious free dynam. ratio, cal. point: A=' num2str(wv.amplist(i)) ', f=' num2str(wv.frlist(j))]);
+                plot(t, cal_mat_SFDR(i, j, :)(:)', plot_types{1})
+                plot(t, cal_mat_SFDR_FFT(i, j, :)(:)', plot_types{2})
+                xlabel('t (s)');
+                ylabel('SFDR (dBc)');
+                legend('method: sine fitting', 'method: FFT', 'location', 'southoutside','orientation','horizontal')
+                legend('boxoff')
+                print_cpu_indep([data.resdir filesep 'whole_timesfdr_' num2str(count, '%02d') '-' num2str(i, '%02d') '-' num2str(j, '%02d')], data.cokl)
                 hold off
 
         endfor

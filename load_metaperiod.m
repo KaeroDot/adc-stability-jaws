@@ -1,4 +1,4 @@
-% loads one dataperiod from the file and calls calulation of one metaperiod
+% loads one metaperiod from the file and calls calculation of one metaperiod
 
 function res = load_metaperiod(paramstruct)
 data = paramstruct.data;
@@ -21,13 +21,13 @@ if size(tmp,1) == sum(wv.pointsec)
         % get real values:
         tmp = adc.offset + tmp.*adc.gain;
         % plot it (only for first run):
-        %%%%if id == 1
+        if id == 1
                 if data.wvplot
                         figure('visible','off')
                         plot(tmp);
                         print_cpu_indep([data.resdir filesep 'wv' num2str(id, '%06d')], data.cokl)
                 endif
-        %%%%endif
+        endif
         % and process data
         res = calc_metaperiod(id, tmp, wv, adc, data);
         res.timestart = starttime;
