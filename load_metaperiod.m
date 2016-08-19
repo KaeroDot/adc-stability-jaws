@@ -1,36 +1,21 @@
 % loads one metaperiod from the file and calls calculation of one metaperiod
 
-function res = load_metaperiod(paramstruct)
-data = paramstruct.data;
-wv = paramstruct.wv;
-adc = paramstruct.adc;
-id = paramstruct.id;
-startpoint = paramstruct.startpoint;
-starttime = paramstruct.starttime;
+function res = load_metaperiod(pars)
 
 % open file:
-fid = fopen([data.filenamepart '.bin'], 'r');
+fid = fopen([pars.data.filenamepart '.bin'], 'r');
 
 % set pointer to the beginning of current metaperiod:
-fseek(fid, startpoint.*sizeof(int32(0)));
+fseek(fid, pars.data.startpoint.*sizeof(int32(0)));
 % read points for whole metaperiod:
-[tmp, count] = fread(fid, sum(wv.pointsec), 'int32', 0, 'ieee-le');
+[tmp, count] = fread(fid, sum(pars.wv.secpoint), 'int32', 0, 'ieee-le');
 
 % if full metaperiod loaded:
-if size(tmp,1) == sum(wv.pointsec)
+if size(tmp,1) == sum(pars.wv.secpoint)
         % get real values:
-        tmp = adc.offset + tmp.*adc.gain;
-        % plot it (only for first run):
-        if id == 1
-                if data.wvplot
-                        figure('visible','off')
-                        plot(tmp);
-                        print_cpu_indep([data.resdir filesep 'wv' num2str(id, '%06d')], data.cokl)
-                endif
-        endif
+        tmp = pars.adc.offset + tmp.*pars.adc.gain;
         % and process data
-        res = calc_metaperiod(id, tmp, wv, adc, data);
-        res.timestart = starttime;
+        res = calc_metaperiod(tmp, pars.wv, pars.adc, pars.data);
 endif
 
 % close file:

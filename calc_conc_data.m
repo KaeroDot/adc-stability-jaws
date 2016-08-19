@@ -28,7 +28,7 @@ for j = 1:size(cal_mat_PSFE,2)
                 % time developement of amplitude %<<<2
                 figure('visible','off')
                 hold on
-                title(['time developement, cal. point: A=' num2str(wv.amplist(i)) ', f=' num2str(wv.frlist(j))]);
+                title(['time developement, cal. point: A=' num2str(wv.listamp(i)) ', f=' num2str(wv.listfr(j))]);
                 plot(t, cal_mat_PSFE(i, j, :)(:)', plot_types{1})
                 plot(t, cal_mat_FFT(i, j, :)(:)', plot_types{2})
                 plot(t, cal_mat_FPNLSF(i, j, :)(:)', plot_types{3})
@@ -40,14 +40,14 @@ for j = 1:size(cal_mat_PSFE,2)
                 hold off
 
                 % allan %<<<2
-                DI.Ts.v = sum(wv.pointsec)./adc.fs;
+                DI.Ts.v = sum(wv.secpoint)./adc.fs;
                 DI.y.v = cal_mat_PSFE(i, j, :)(:)';
                 CS.verbose = 0;
                 DO_ADEV = qwtb('ADEV', DI, CS);
                 DO_OADEV = qwtb('OADEV', DI, CS);
                 figure('visible','off')
                 hold on
-                title(['allan dev., cal. point: A=' num2str(wv.amplist(i)) ', f=' num2str(wv.frlist(j))]);
+                title(['allan dev., cal. point: A=' num2str(wv.listamp(i)) ', f=' num2str(wv.listfr(j))]);
                 plot(DO_ADEV.tau.v, DO_ADEV.adev.v, '-k')
                 plot(DO_OADEV.tau.v, DO_OADEV.oadev.v, '-r')
                 xlabel('tau (s)');
@@ -60,7 +60,7 @@ for j = 1:size(cal_mat_PSFE,2)
                 % time developement of amplitude %<<<2
                 figure('visible','off')
                 hold on
-                title(['spurious free dynam. ratio, cal. point: A=' num2str(wv.amplist(i)) ', f=' num2str(wv.frlist(j))]);
+                title(['spurious free dynam. ratio, cal. point: A=' num2str(wv.listamp(i)) ', f=' num2str(wv.listfr(j))]);
                 plot(t, cal_mat_SFDR(i, j, :)(:)', plot_types{1})
                 plot(t, cal_mat_SFDR_FFT(i, j, :)(:)', plot_types{2})
                 xlabel('t (s)');
@@ -88,7 +88,7 @@ function plot_cal_mat_one_method(tvec, sectimestart, cal_mat, methodname, wv, da
                 for i = 1:size(cal_mat,1)
                         count = count + 1;
                         plot(tvec + sectimestart(i, j), cal_mat(i, j, :)(:)' - cal_mat(i, j, 1), plot_types{count})
-                        legendcell = [legendcell {['A=' num2str(wv.amplist(i)) ',fr=' num2str(wv.frlist(j))]}];
+                        legendcell = [legendcell {['A=' num2str(wv.listamp(i)) ',fr=' num2str(wv.listfr(j))]}];
                 endfor
         endfor
         title('time developement, all calibration points');
