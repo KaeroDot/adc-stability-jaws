@@ -77,7 +77,8 @@ for i = 1:length(wv.secpoint)
         idrow = idrow(1);
         idcol = find(wv.listfr == wv.secfr(i));
         idcol = idcol(1);
-        wv.sectimestart(idrow, idcol) = (previouspos + 0)./adc.fs;
+        wv.sectimestart(i) = (previouspos + 0)./adc.fs;
+        wv.sectimestartgrid(idrow, idcol) = wv.sectimestart(i);
 endfor
 [wv.gridfr, wv.gridamp] = meshgrid(wv.listamp, wv.listfr);
 
@@ -118,14 +119,14 @@ else
 endif
 
 % the calculation itself:
-%%%res = parcellfun(procno, @load_metaperiod, paramcell, 'verboselevel', 1);
+res = parcellfun(procno, @load_metaperiod, paramcell, 'verboselevel', 1);
 
 % methods for testing purposes:
 %%%res = cellfun(@load_metaperiod, paramcell);
-for i = 1:length(paramcell)
-        i
-        res(i) = load_metaperiod(paramcell{i});
-endfor
+%%%for i = 1:length(paramcell)
+%%%        i
+%%%        res(i) = load_metaperiod(paramcell{i});
+%%%endfor
 
 % ------------------ save data ------------------ %<<<1
 save('-binary', [data.resdir filesep 'proc_data.bin'])
