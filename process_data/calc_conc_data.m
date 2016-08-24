@@ -13,15 +13,20 @@ cal_mat_SFDR = cat(3, res.SFDR);
 cal_mat_SFDR_FFT = cat(3, res.SFDR_FFT);
 
 % ------------------ plot per method ------------------ %<<<1
-plot_cal_mat_one_method(tvec, wv.sectimestartgrid, cal_mat_A_PSFE, 'PSFE', wv, data, 'Amplitude', 'A');
-plot_cal_mat_one_method(tvec, wv.sectimestartgrid, cal_mat_A_FFT, 'FFT', wv, data, 'Amplitude', 'A');
-plot_cal_mat_one_method(tvec, wv.sectimestartgrid, cal_mat_A_FPNLSF, 'FPNLSF', wv, data, 'Amplitude', 'A');
-plot_cal_mat_one_method(tvec, wv.sectimestartgrid, cal_mat_ph_PSFE, 'PSFE', wv, data, 'Phase', 'ph');
-plot_cal_mat_one_method(tvec, wv.sectimestartgrid, cal_mat_ph_FFT, 'FFT', wv, data, 'Phase', 'ph');
-plot_cal_mat_one_method(tvec, wv.sectimestartgrid, cal_mat_ph_FPNLSF, 'FPNLSF', wv, data, 'Phase', 'ph');
+plot_cal_mat_one_method(tvec, wv.sectimestartgrid, cal_mat_A_PSFE, 'PSFE', wv, data, 'Amplitude', 'A', 'Amplitude (V)');
+plot_cal_mat_one_method(tvec, wv.sectimestartgrid, cal_mat_A_FFT, 'FFT', wv, data, 'Amplitude', 'A', 'Amplitude (V)');
+plot_cal_mat_one_method(tvec, wv.sectimestartgrid, cal_mat_A_FPNLSF, 'FPNLSF', wv, data, 'Amplitude', 'A', 'Amplitude (V)');
+
+plot_cal_mat_one_method(tvec, wv.sectimestartgrid, cal_mat_SFDR, 'sinfit', wv, data, 'Spur. Free Dyn. Ratio', 'SFDR', 'SFDR (dBc)');
+plot_cal_mat_one_method(tvec, wv.sectimestartgrid, cal_mat_SFDR_FFT, 'FFT', wv, data, 'Spur. Free Dyn. Ratio', 'SFDR', 'SFDR (dBc)');
+
+plot_cal_mat_one_method(tvec, wv.sectimestartgrid, cal_mat_ph_PSFE, 'PSFE', wv, data, 'Phase', 'ph', 'Phase (rad)');
+plot_cal_mat_one_method(tvec, wv.sectimestartgrid, cal_mat_ph_FFT, 'FFT', wv, data, 'Phase', 'ph', 'Phase (rad)');
+plot_cal_mat_one_method(tvec, wv.sectimestartgrid, cal_mat_ph_FPNLSF, 'FPNLSF', wv, data, 'Phase', 'ph', 'Phase (rad)');
 
 % ------------------ plot per calibration point ------------------ %<<<1
-plot_types = {'kx-', 'rx-', 'gx-', 'bx-', 'cx-', 'mx-', 'ko-', 'ro-', 'go-', 'bo-', 'co-', 'mo-', 'k*-', 'r*-', 'g*-', 'b*-', 'c*-', 'm*-',};
+%plot_types = {'kx-', 'rx-', 'gx-', 'bx-', 'cx-', 'mx-', 'ko-', 'ro-', 'go-', 'bo-', 'co-', 'mo-', 'k*-', 'r*-', 'g*-', 'b*-', 'c*-', 'm*-'};
+plot_types = {'k-', 'r-', 'g-', 'b-', 'c-', 'm-'};
 
 count = 0;
 % for frequencies:
@@ -31,7 +36,7 @@ for j = 1:size(cal_mat_A_PSFE,2)
                 count = count + 1;
                 t = tvec + wv.sectimestartgrid(i, j);
 
-                % time developement of amplitude %<<<2
+                % amplitude, time %<<<2
                 figure('visible','off')
                 hold on
                 title(['time developement, cal. point: A=' num2str(wv.listamp(i)) ', f=' num2str(wv.listfr(j))]);
@@ -44,7 +49,7 @@ for j = 1:size(cal_mat_A_PSFE,2)
                 print_cpu_indep([data.resdir filesep 'A_time_' num2str(count, '%02d') '-' num2str(i, '%02d') '-' num2str(j, '%02d')], data.cokl)
                 hold off
 
-                % allan of amplitude %<<<2
+                % amplitude, allan %<<<2
                 DI.Ts.v = sum(wv.secpoint)./adc.fs;
                 DI.y.v = cal_mat_A_PSFE(i, j, :)(:)';
                 CS.verbose = 0;
@@ -61,7 +66,7 @@ for j = 1:size(cal_mat_A_PSFE,2)
                 print_cpu_indep([data.resdir filesep 'A_adev_' num2str(count, '%02d') '-' num2str(i, '%02d') '-' num2str(j, '%02d')], data.cokl)
                 hold off
 
-                % time developement of sfdr %<<<2
+                % sfdr, time %<<<2
                 figure('visible','off')
                 hold on
                 title(['spurious free dynam. ratio, cal. point: A=' num2str(wv.listamp(i)) ', f=' num2str(wv.listfr(j))]);
@@ -73,7 +78,7 @@ for j = 1:size(cal_mat_A_PSFE,2)
                 print_cpu_indep([data.resdir filesep 'SFDR_time_' num2str(count, '%02d') '-' num2str(i, '%02d') '-' num2str(j, '%02d')], data.cokl)
                 hold off
 
-                % allan of sfdr %<<<2
+                % sfdr, allan %<<<2
                 DI.Ts.v = sum(wv.secpoint)./adc.fs;
                 DI.y.v = cal_mat_SFDR(i, j, :)(:)';
                 CS.verbose = 0;
@@ -85,19 +90,50 @@ for j = 1:size(cal_mat_A_PSFE,2)
                 plot(DO_ADEV.tau.v, DO_ADEV.adev.v, '-k')
                 plot(DO_OADEV.tau.v, DO_OADEV.oadev.v, '-r')
                 xlabel('tau (s)');
-                ylabel('allan dev. (V)');
+                ylabel('allan dev. (dBc)');
                 legend('ADEV', 'OADEV', 'location', 'southoutside','orientation','horizontal')
                 print_cpu_indep([data.resdir filesep 'SFDR_adev_' num2str(count, '%02d') '-' num2str(i, '%02d') '-' num2str(j, '%02d')], data.cokl)
                 hold off
+
+                % phase, time %<<<2
+                figure('visible','off')
+                hold on
+                title(['time developement, cal. point: A=' num2str(wv.listamp(i)) ', f=' num2str(wv.listfr(j))]);
+                plot(t, cal_mat_ph_PSFE(i, j, :)(:)', plot_types{1})
+                plot(t, cal_mat_ph_FFT(i, j, :)(:)', plot_types{2})
+                plot(t, cal_mat_ph_FPNLSF(i, j, :)(:)', plot_types{3})
+                xlabel('t (s)');
+                ylabel('ph (rad)');
+                legend('PSFE', 'FFT', 'FPNLSF', 'location', 'southoutside','orientation','horizontal')
+                print_cpu_indep([data.resdir filesep 'ph_time_' num2str(count, '%02d') '-' num2str(i, '%02d') '-' num2str(j, '%02d')], data.cokl)
+                hold off
+
+                % amplitude, allan %<<<2
+                DI.Ts.v = sum(wv.secpoint)./adc.fs;
+                DI.y.v = cal_mat_ph_PSFE(i, j, :)(:)';
+                CS.verbose = 0;
+                DO_ADEV = qwtb('ADEV', DI, CS);
+                DO_OADEV = qwtb('OADEV', DI, CS);
+                figure('visible','off')
+                hold on
+                title(['allan dev. of phase (PSFE), cal. point: A=' num2str(wv.listamp(i)) ', f=' num2str(wv.listfr(j))]);
+                plot(DO_ADEV.tau.v, DO_ADEV.adev.v, '-k')
+                plot(DO_OADEV.tau.v, DO_OADEV.oadev.v, '-r')
+                xlabel('tau (s)');
+                ylabel('allan dev. (rad)');
+                legend('ADEV', 'OADEV', 'location', 'southoutside','orientation','horizontal')
+                print_cpu_indep([data.resdir filesep 'ph_adev_' num2str(count, '%02d') '-' num2str(i, '%02d') '-' num2str(j, '%02d')], data.cokl)
+                hold off
+
 
         endfor
 endfor
 
 endfunction
 
-function plot_cal_mat_one_method(tvec, sectimestartgrid, cal_mat, methodname, wv, data, varlong, varshort) % %<<<1
+function plot_cal_mat_one_method(tvec, sectimestartgrid, cal_mat, methodname, wv, data, varlong, varshort, varaxislbl) % %<<<1
 % plots timedvelopement for all calibration points for selected method
-        plot_types = {'kx-', 'rx-', 'gx-', 'bx-', 'cx-', 'mx-', 'ko-', 'ro-', 'go-', 'bo-', 'co-', 'mo-', 'k*-', 'r*-', 'g*-', 'b*-', 'c*-', 'm*-',};
+        plot_types = {'kx-', 'rx-', 'gx-', 'bx-', 'cx-', 'mx-', 'ko-', 'ro-', 'go-', 'bo-', 'co-', 'mo-', 'k*-', 'r*-', 'g*-', 'b*-', 'c*-', 'm*-'};
         count = 0;
         figure('visible','off')
         legendcell = {};
@@ -113,7 +149,7 @@ function plot_cal_mat_one_method(tvec, sectimestartgrid, cal_mat, methodname, wv
         endfor
         title([ varlong ', time developement, all calibration points']);
         xlabel('t (s)');
-        ylabel('U (V)');
+        ylabel(varaxislbl);
         legend(legendcell);
         legend('location', 'eastoutside');
         print_cpu_indep([data.resdir filesep varshort '_time_' methodname], data.cokl)

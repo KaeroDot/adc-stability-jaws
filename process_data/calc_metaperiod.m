@@ -20,6 +20,8 @@ for i = 1:length(wv.secpoint)
                 figure('visible','off')
                 t = [1:length(y)]./adc.fs + data.starttime + wv.sectimestart(i); %XXX add starttime
                 plot(t, y)
+                xlabel('time (s)')
+                ylabel('U (V)')
                 print_cpu_indep([data.resdir filesep() 'mwv' num2str(data.id, '%06d') 'sec' num2str(i, '%02d')], data.cokl)
         endif
         res.S(i).nom_amp = wv.secamp(i);

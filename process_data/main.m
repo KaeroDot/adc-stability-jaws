@@ -2,13 +2,19 @@ clear all
 close all
 
 % ------------------ settings ------------------ %<<<1
-data.filenamepart = '../data/34/JAWS22_13_D4#1#2_034_ca0p5_four_tone_rep32';
+% filename:
+% how many points ignore at the beginning:
+data.filenamepart = '../../data/34/JAWS22_13_D4#1#2_034_ca0p5_four_tone_rep32';
+data.ignorepoints = 61549;
+data.filenamepart = '../../data/39/JAWS22_13_D4#1#2_039_ca0p4_four_tone_rep32';
+data.ignorepoints = 1577;
+data.ignorepoints = 280000;
 % plot waveform data of first metaperiod?
 data.wvplotfirst = 1;
 % plot waveform data of last metaperiod?
 data.wvplotlast = 1;
-% how many points ignore at the beginning:
-data.ignorepoints = 61549;
+% plot waveform data of ignored points?
+data.wvplotignored = 1;
 % after all amplitudes frequency changes...
 % list of amplitudes:
 wv.listamp = [0.1 0.3 0.5 0.7];
@@ -25,7 +31,7 @@ qwtbpath = '~/qwtb/qwtb';
 % data - structure, informations about data. contains different data for every metawaveform
 % ------------------ basic setup ------------------ %<<<1
 % create results directory
-data.resdir = [data.filenamepart filesep];
+data.resdir = [data.filenamepart '_result' filesep];
 if ~exist(data.resdir, 'dir')
         mkdir(data.resdir);
 endif
@@ -82,7 +88,27 @@ for i = 1:length(wv.secpoint)
 endfor
 [wv.gridfr, wv.gridamp] = meshgrid(wv.listamp, wv.listfr);
 
+% ------------------ plot ignored points ------------------ %<<<1
+
+% open file:
+fid = fopen([data.filenamepart '.bin'], 'r');
+% read ignored points:
+[tmp, count] = fread(fid, data.ignorepoints, 'int32', 0, 'ieee-le');
+% close file:
+fclose(fid);
+
+if (data.wvplotignored)
+        figure('visible','off')
+        %t = [1:length(tmp)]./adc.fs;
+        plot(tmp, '-+')
+        %xlabel('time (s)')
+        xlabel('points')
+        ylabel('U (V)')
+        print_cpu_indep([data.resdir filesep() 'ignoredpoints'], data.cokl)
+endif
+
 % ------------------ parallel processing of data ------------------ %<<<1
+% prepare parameter cell ------------------ %<<<2
 % if not on supercomputer, calculate only part of data: 
 if ~data.cokl
         data.points = 960000 + data.ignorepoints + 1;
@@ -118,8 +144,9 @@ else
         procno = 4;
 endif
 
-% the calculation itself:
+% the calculation itself ------------------ %<<<2
 res = parcellfun(procno, @load_metaperiod, paramcell, 'verboselevel', 1);
+
 
 % methods for testing purposes:
 %%%res = cellfun(@load_metaperiod, paramcell);
@@ -141,3 +168,5 @@ data.points
 if data.points - mwstartpos(end) > sum(wv.secpoint)
         disp('number of processed points is smaller than number of points in info file. missing data!')
 endif
+
+% vim modeline: vim: foldmarker=%<<<,%>>> fdm=marker fen ft=octave textwidth=1000
