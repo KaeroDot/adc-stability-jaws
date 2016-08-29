@@ -7,8 +7,7 @@ close all
 data.filenamepart = '../../data/34/JAWS22_13_D4#1#2_034_ca0p5_four_tone_rep32';
 data.ignorepoints = 61549;
 data.filenamepart = '../../data/39/JAWS22_13_D4#1#2_039_ca0p4_four_tone_rep32';
-data.ignorepoints = 1577;
-data.ignorepoints = 280000;
+data.ignorepoints = 113579;
 % plot waveform data of first metaperiod?
 data.wvplotfirst = 1;
 % plot waveform data of last metaperiod?
