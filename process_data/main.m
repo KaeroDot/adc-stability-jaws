@@ -8,6 +8,8 @@ data.filenamepart = '../../data/34/JAWS22_13_D4#1#2_034_ca0p5_four_tone_rep32';
 data.ignorepoints = 61549;
 data.filenamepart = '../../data/39/JAWS22_13_D4#1#2_039_ca0p4_four_tone_rep32';
 data.ignorepoints = 113579;
+data.filenamepart = '../../data/42/JAWS22_13_D4#1#2_042_ca0p5_four_tone_rep32';
+data.ignorepoints = 32869;
 % plot waveform data of first metaperiod?
 data.wvplotfirst = 1;
 % plot waveform data of last metaperiod?
@@ -38,9 +40,8 @@ endif
 % add QWTB path:
 addpath(qwtbpath);
 
-% automatic detection of supercomputer named "cokl":
-[s, o] = system('uname -n');
-data.cokl = strcmpi(deblank(o), 'vsmp1');
+% detection of CMI supercomputer 'cokl':
+data.cokl = iscokl;
 
 % ------------------ parse info file ------------------ %<<<1
 infostr = infoload([data.filenamepart '.bin']);
