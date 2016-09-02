@@ -44,6 +44,11 @@ for i = 1:length(wv.secpoint)
         % from 2 to 80times multiple of main freq:
         idmin = 2;
         idmax = find(tmpFFT.f.v > wv.secfr(i)*80);
+        % it could happen that wv.secfr(i)*80 is bigger than range of frequencies in the
+        % spectrum, so to prevent error:
+        if isempty(idmax)
+                idmax = length(tmpFFT.f.v);
+        endif
         idmax = idmax(1);
         tmp = tmpFFT.A.v(idmin:idmax);
         % highest point:

@@ -10,6 +10,12 @@ data.filenamepart = '../../data/39/JAWS22_13_D4#1#2_039_ca0p4_four_tone_rep32';
 data.ignorepoints = 113579;
 data.filenamepart = '../../data/42/JAWS22_13_D4#1#2_042_ca0p5_four_tone_rep32';
 data.ignorepoints = 32869;
+data.filenamepart = '../../data/simulated_data/simulated_data';
+data.ignorepoints = 240000;
+data.filenamepart = '../../data/48sine/JAWS22_13_D4#2_048_ca0p4_sinus_4.8kHz_rep01';
+data.ignorepoints = 48;
+data.filenamepart = '../../data/50sine/JAWS22_13_D4#2_050_ca0p4_sinus_4.8kHz_rep32';
+data.ignorepoints = 2106;
 % plot waveform data of first metaperiod?
 data.wvplotfirst = 1;
 % plot waveform data of last metaperiod?
@@ -19,8 +25,11 @@ data.wvplotignored = 1;
 % after all amplitudes frequency changes...
 % list of amplitudes:
 wv.listamp = [0.1 0.3 0.5 0.7];
+wv.listamp = [0.1];
 % list of frequencies:
 wv.listfr = [150 300 600 1200];
+wv.listfr = [150].*32;
+wv.listfr = [150];
 % number of periods in every amplitude and frequency section:
 wv.secperiods = 10;
 % path to the qwtb:
