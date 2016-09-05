@@ -4,7 +4,7 @@ close all
 % ------------------ settings ------------------ %<<<1
 
 % clock frequency (frequency of samples of the BPG):
-fclock = 13.76256e9
+fclock = 13.76256e9;
 % number of periods in every amplitude section:
 P = 10;
 % points in memory sections (number of points per frequency section):
@@ -17,6 +17,10 @@ A = [0.1, 0.3, 0.5, 0.7];
 B = 32;
 % ADC sampling frequency:
 adc.fs = 480e3;
+% simulated noise (v rms):
+simnoise = 1e-10;
+% simulated drift (volts/second):
+simdrift = 0;
 
 % ------------------ preparation ------------------ %<<<1
 % number of amplitude sections in frequency section:
@@ -39,34 +43,44 @@ for i = 1:L
     cnt = [1 : M(i) ./ (P .* K)];
         % for every amplitude:
         for curA = A
-            % BPG samples %<<<2
-            % generate samples for one period of signal in current amplitude section:
-            tmpy = curA .* sin(2 .* pi .* cnt .* f(i) ./ fclock);
-            % repeat to get required number of periods in current amplitude section:
-            y = [y repmat(tmpy, 1, P)];
+                % BPG samples %<<<2
+                % generate samples for one period of signal in current amplitude section:
+                tmpy = curA .* sin(2 .* pi .* cnt .* f(i) ./ fclock);
+                % repeat to get required number of periods in current amplitude section:
+                y = [y repmat(tmpy, 1, P)];
 
-            % ADC samples %<<<2
-            % time of ADC samples for whole current amplitude section:
-            tadc = [0 : 1./adc.fs : P ./ f(i) .* B ]; 
-            tadc = tadc(1:end-1);
-            tmpyadc = curA .* sin(2 .* pi .* tadc .* f(i) ./ B);
-            yadc = [yadc tmpyadc];
+                % ADC samples %<<<2
+                % time of ADC samples for whole current amplitude section:
+                tadc = [0 : 1./adc.fs : P ./ f(i) .* B ]; 
+                tadc = tadc(1:end-1);
+                tmpyadc = curA .* sin(2 .* pi .* tadc .* f(i) ./ B);
+                % concatenate waveform into metawaveform:
+                yadc = [yadc tmpyadc];
         end % K amplitudes
 end % L frequencies
 
 % ------------------ saving the ADC data ------------------ %<<<1
 adc.offset = mean(yadc);
-yadcint = yadc - adc.offset;
-adc.gain = max(yadcint)/double(intmax('int32'));
-yadcint = yadcint./adc.gain;
+tmp = yadc - adc.offset;
+adc.gain = (max(yadc) + 10.*simnoise)/double(intmax('int32'));
 
 fn = 'simulated_data.bin';
 fid = fopen(fn, 'w');
 % number of metawaveform periods:
-mwperiods = 4000;
-% convert to int32:
-yadcint = int32(yadcint);
+mwperiods = 4000;  % cca 3.6G file
+mwperiods = 40;
+t = 0;
 for i = 1:mwperiods
+        % add noise to simulation:
+        yadc = yadc + normrnd(0, simnoise, size(yadc));
+        % add drift to simulation:
+        yadc = yadc + (t.*simdrift + cumsum(ones(size(adc)).*simdrift./adc.fs));
+        t = t + length(yadc)./adc.fs;
+
+        yadcint = yadc - adc.offset;
+        yadcint = yadcint./adc.gain;
+        % convert to int32:
+        yadcint = int32(yadcint);
         fwrite(fid, yadcint, 'int32', 0, 'ieee-le');
 endfor
 fclose(fid);
@@ -81,7 +95,7 @@ infostr = [infostr infosetnumber('data offset', adc.offset)];
 infostr = infosetsection('measurement settings', infostr);
 infosave(infostr, fn, 'info', true);
 
-% ------------------ plotting BPG samples ------------------ %<<<1
+% ------------------ plotting BPG samples (one metawaveform) ------------------ %<<<1
 
 % decimate data by factor of X for faster plotting:
 ydec = y(1:1000:end);
@@ -89,13 +103,13 @@ ysdec = y(1:1000:end);
 plot(ydec, '-', ysdec, 'x')
 %%% print -djpg wv-time.jpg
 
-% ------------------ fft of BPG samples ------------------ %<<<1
-
-disp('calculating 50x spectra')
-ylarge = repmat(y, 1, 50);
-[F, AMP, PH] = ampphspectrum(y, 1, 0);
-disp('finished')
-plot(F(1:1e4), AMP(1:1e4))
-print -djpg wv-spectrum.jpg
-
+%  % ------------------ fft of BPG samples ------------------ %<<<1
+%  
+%  disp('calculating 50x spectra')
+%  ylarge = repmat(y, 1, 50);
+%  [F, AMP, PH] = ampphspectrum(y, 1, 0);
+%  disp('finished')
+%  plot(F(1:1e4), AMP(1:1e4))
+%  print -djpg wv-spectrum.jpg
+%  
 % vim modeline: vim: foldmarker=%<<<,%>>> fdm=marker fen ft=octave textwidth=1000

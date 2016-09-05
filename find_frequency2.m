@@ -9,9 +9,9 @@ function res = find_frequency2(iterator)
 
 % ---------- SETTINGS  -------------------- 
 % target clock frequency (Hz):
-targfclock = 14e9;
+targfclock = 13.7e9;
 % search in range around target clock frequency (Hz):
-searchrange = 1e9;
+searchrange = 0.1e9;
 
 % points per memory section of pattern generator
 % (each section can contain signal of different frequency)
@@ -69,7 +69,6 @@ maxfclock = targfclock + searchrange;
 
 % generate all possible clock frequencies:
 fclock = [minfclock:clockprec:maxfclock];
-%fclock = 13.76256e9
 % calculate fundamental signal frequency:
 ffund = fclock./fundcodel.*periodspersection./bitmult;
 % calculate compensation signal frequency:
