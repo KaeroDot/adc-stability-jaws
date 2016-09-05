@@ -1,6 +1,6 @@
 % calculates all possible information from a single metawaveform
 
-function res = calc_metaperiod(ymwv, wv, adc, data)
+function res = calc_metawaveform(ymwv, wv, adc, data)
 % for structures wv and adc see main.m
 res = [];
 
@@ -93,7 +93,7 @@ endfunction
 
 function phase_out = wrap_pm_pi(phase); %<<<1
 % wraps phase to -pi to +pi
-phase_out = phase - 2.*pi*fix((phase+pi)./(2*pi)) + (phase<-pi).*2.*pi;
+phase_out = phase - 2*pi*floor( (phase+pi)/(2*pi) );
 endfunction
 
 % vim modeline: vim: foldmarker=%<<<,%>>> fdm=marker fen ft=octave textwidth=1000

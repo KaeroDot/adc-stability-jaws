@@ -1,6 +1,6 @@
 % loads one metawaveform from the file and calls calculation of one metawaveform
 
-function res = load_metaperiod(pars)
+function res = load_metawaveform(pars)
 
 % open file:
 fid = fopen([pars.data.filenamepart '.bin'], 'r');

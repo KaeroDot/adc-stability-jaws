@@ -68,7 +68,7 @@ function plot_cal_mat_one_method(cmm, methodname, varlong, varshort, varaxislbl,
                         legendcell = [legendcell {['A=' num2str(wv.listamp(k)) ',fr=' num2str(wv.listfr(l))]}];
                 endfor
         endfor
-        title([ varlong ', time developement, all cal. points, first point subtracted']);
+        title([ varlong ', ' methodname ', time developement, all cal. points, first point subtracted']);
         xlabel('t (s)');
         ylabel(varaxislbl);
         legend(legendcell);
