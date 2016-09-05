@@ -1,197 +1,113 @@
-% calculates and plots informations from concatenated data
-function calc_conc_data(res, tvec, wv, adc, data)
-% ------------------ generate calibration matrices ------------------ %<<<1
+% calculates informations from concatenated data
+function cres = calc_conc_data(res, wv, adc, data)
+% calibration matrix description:
 % indexes:      row          column          sheet
 % variable:     amplitude    frequency       time
-cal_mat_A_PSFE = cat(3, res.A_PSFE);
-cal_mat_A_FFT = cat(3, res.A_FFT);
-cal_mat_A_FPNLSF = cat(3, res.A_FPNLSF);
-cal_mat_ph_PSFE = cat(3, res.ph_PSFE);
-cal_mat_ph_FFT = cat(3, res.ph_FFT);
-cal_mat_ph_FPNLSF = cat(3, res.ph_FPNLSF);
-cal_mat_SFDR = cat(3, res.SFDR);
-cal_mat_SFDR_FFT = cat(3, res.SFDR_FFT);
 
-% ------------------ plot per method all cal points in one plot ------------------ %<<<1
-plot_cal_mat_one_method(tvec, wv.sectimestartgrid, cal_mat_A_PSFE, 'PSFE', wv, data, 'Amplitude', 'A', 'Amplitude (V)');
-plot_cal_mat_one_method(tvec, wv.sectimestartgrid, cal_mat_A_FFT, 'FFT', wv, data, 'Amplitude', 'A', 'Amplitude (V)');
-plot_cal_mat_one_method(tvec, wv.sectimestartgrid, cal_mat_A_FPNLSF, 'FPNLSF', wv, data, 'Amplitude', 'A', 'Amplitude (V)');
+% structures description:
+% res.cal_mat.QUANTITY.METHOD.v - values
+% res.cal_mat.QUANTITY.METDHOD.(M)(O)ADEV.tau - tau values
+% res.cal_mat.QUANTITY.METDHOD.(M)(O)ADEV.v - (modified)(overlapped) allan deviation values
+% res.cal_mat.QUANTITY.METDHOD.corraxislbl - cell of axis labels for correlation matrix plotting
+% res.cal_mat.QUANTITY.METDHOD.pears - matrix of pearsons correlation coefficients
+% res.cal_mat.QUANTITY.METDHOD.spear - matrix of spearman correlation coefficients
+% res.cal_mat.QUANTITY.METDHOD.kend - matrix of kendall correlation coefficients
 
-plot_cal_mat_one_method(tvec, wv.sectimestartgrid, cal_mat_SFDR, 'sinfit', wv, data, 'Spur. Free Dyn. Ratio', 'SFDR', 'SFDR (dBc)');
-plot_cal_mat_one_method(tvec, wv.sectimestartgrid, cal_mat_SFDR_FFT, 'FFT', wv, data, 'Spur. Free Dyn. Ratio', 'SFDR', 'SFDR (dBc)');
+% ------------------ prepare calibration matrices ------------------ %<<<1
+cres.cal_mat.f.PSFE.v = cat(3, res.A_PSFE);
+cres.cal_mat.f.FFT.v = cat(3, res.A_FFT);
+cres.cal_mat.f.FPNLSF.v = cat(3, res.A_FPNLSF);
+cres.cal_mat.A.PSFE.v = cat(3, res.A_PSFE);
+cres.cal_mat.A.FFT.v = cat(3, res.A_FFT);
+cres.cal_mat.A.FPNLSF.v = cat(3, res.A_FPNLSF);
+cres.cal_mat.ph.PSFE.v = cat(3, res.ph_PSFE);
+cres.cal_mat.ph.FFT.v = cat(3, res.ph_FFT);
+cres.cal_mat.ph.FPNLSF.v = cat(3, res.ph_FPNLSF);
+cres.cal_mat.SFDR.sinfit.v = cat(3, res.SFDR_sinfit);
+cres.cal_mat.SFDR.FFT.v = cat(3, res.SFDR_FFT);
 
-plot_cal_mat_one_method(tvec, wv.sectimestartgrid, cal_mat_ph_PSFE, 'PSFE', wv, data, 'Phase', 'ph', 'Phase (rad)');
-plot_cal_mat_one_method(tvec, wv.sectimestartgrid, cal_mat_ph_FFT, 'FFT', wv, data, 'Phase', 'ph', 'Phase (rad)');
-plot_cal_mat_one_method(tvec, wv.sectimestartgrid, cal_mat_ph_FPNLSF, 'FPNLSF', wv, data, 'Phase', 'ph', 'Phase (rad)');
-
-% ------------------ plot per calibration point all methods in one plot ------------------ %<<<1
+% ------------------ calculate allan deviations for every calibration point ------------------ %<<<1
 count = 0;
 % for frequencies:
-for j = 1:size(cal_mat_A_PSFE,2)
+for l = 1:wv.L
         % for amplitudes:
-        for i = 1:size(cal_mat_A_PSFE,1)
+        for k = 1:wv.K
                 count = count + 1;
-                t = tvec + wv.sectimestartgrid(i, j);
+                t = data.tvec + wv.gridsectimestart(k, l);
 
-                % amplitude
-                plot_cal_point_all_methods(i, j, count, t, {cal_mat_A_PSFE, cal_mat_A_FFT, cal_mat_A_FPNLSF}, {'PSFE', 'FFT', 'FPNLSF'}, 'Amplitude', 'A', 'Amp (V)', wv, data, adc);
-%               % sfdr
-                plot_cal_point_all_methods(i, j, count, t, {cal_mat_SFDR, cal_mat_SFDR_FFT}, {'sine fit', 'FFT'}, 'Spurious Free Dynam. Ratio', 'SFDR', 'SFDR (dBc)', wv, data, adc);
-%               % phase %<<<2
-                plot_cal_point_all_methods(i, j, count, t, {cal_mat_ph_PSFE, cal_mat_ph_FFT, cal_mat_ph_FPNLSF}, {'PSFE', 'FFT', 'FPNLSF'}, 'Phase', 'ph', 'ph (rad)', wv, data, adc);
+                % metawaveform period:
+                T = sum(wv.secpoint) ./ adc.fs;
 
+                cres.cal_mat.f.PSFE =            calc_allan(k, l, cres.cal_mat.f.PSFE, T);
+                cres.cal_mat.f.FFT =             calc_allan(k, l, cres.cal_mat.f.FFT, T);
+                cres.cal_mat.f.FPNLSF =          calc_allan(k, l, cres.cal_mat.f.FPNLSF, T);
+                cres.cal_mat.A.PSFE =            calc_allan(k, l, cres.cal_mat.A.PSFE, T);
+                cres.cal_mat.A.FFT =             calc_allan(k, l, cres.cal_mat.A.FFT, T);
+                cres.cal_mat.A.FPNLSF =          calc_allan(k, l, cres.cal_mat.A.FPNLSF, T);
+                cres.cal_mat.ph.PSFE =           calc_allan(k, l, cres.cal_mat.ph.PSFE, T);
+                cres.cal_mat.ph.FFT =            calc_allan(k, l, cres.cal_mat.ph.FFT, T);
+                cres.cal_mat.ph.FPNLSF =         calc_allan(k, l, cres.cal_mat.ph.FPNLSF, T);
+                cres.cal_mat.SFDR.sinfit =       calc_allan(k, l, cres.cal_mat.SFDR.sinfit, T);
+                cres.cal_mat.SFDR.FFT =          calc_allan(k, l, cres.cal_mat.SFDR.FFT, T);
         endfor
 endfor
 
 % ------------------ calculate/plot correlation factors ------------------ %<<<1
-calc_corr(cal_mat_A_PSFE, 'PSFE', wv, data, 'Amplitude', 'A', 'Amplitude (V)');
-calc_corr(cal_mat_ph_PSFE, 'PSFE', wv, data, 'Phase', 'ph', 'Phase (rad)');
-calc_corr(cal_mat_ph_PSFE, 'PSFE', wv, data, 'Phase', 'ph', 'Phase (rad)');
-calc_corr(cal_mat_SFDR, 'SFDR', wv, data, 'SFDR', 'SFDR', 'SFDR (dBc)');
+cres.cal_mat.f.PSFE =            calc_corr(cres.cal_mat.f.PSFE, wv, data);
+cres.cal_mat.A.PSFE =            calc_corr(cres.cal_mat.A.PSFE, wv, data);
+cres.cal_mat.ph.PSFE =           calc_corr(cres.cal_mat.ph.PSFE, wv, data);
+cres.cal_mat.SFDR.sinfit =       calc_corr(cres.cal_mat.SFDR.sinfit, wv, data);
 
 endfunction %>>>1
 
-function plot_cal_mat_one_method(tvec, sectimestartgrid, cal_mat, methodname, wv, data, varlong, varshort, varaxislbl) % %<<<1
-% plots time development for all calibration points for selected method
-        plot_types = {'kx-', 'rx-', 'gx-', 'bx-', 'cx-', 'mx-', 'ko-', 'ro-', 'go-', 'bo-', 'co-', 'mo-', 'k*-', 'r*-', 'g*-', 'b*-', 'c*-', 'm*-'};
-        count = 0;
-        figure('visible','off')
-        legendcell = {};
-        hold on
-        % for frequencies:
-        for j = 1:size(cal_mat,2)
-                % for amplitudes:
-                for i = 1:size(cal_mat,1)
-                        count = count + 1;
-                        plot(tvec + sectimestartgrid(i, j), cal_mat(i, j, :)(:)' - cal_mat(i, j, 1), plot_types{count})
-                        legendcell = [legendcell {['A=' num2str(wv.listamp(i)) ',fr=' num2str(wv.listfr(j))]}];
-                endfor
-        endfor
-        title([ varlong ', time developement, all calibration points, zero is first point a series']);
-        xlabel('t (s)');
-        ylabel(varaxislbl);
-        legend(legendcell);
-        legend('location', 'eastoutside');
-        print_cpu_indep([data.resdir filesep varshort '_time_' methodname], data.cokl)
-        hold off
-endfunction
+function cmm = calc_allan(k, l, cmm, T) %<<<1
+% k - amplitude section index
+% l - frequency section index
+% cmm - calibration matrix method (e.g. cal_mat.A.PSFE)
+% T - period of metawaveform
 
-function plot_cal_point_all_methods(ind_amp, ind_fr, count, t, c_cal_mats, c_legends, varlong, varshort, varaxislbl, wv, data, adc) %<<<1
-        plot_types = {'k-', 'r-', 'g-', 'b-', 'c-', 'm-'};
-        % time %<<<2
-        figure('visible','off')
-        hold on
-        title([varlong ', cal. point: A=' num2str(wv.listamp(ind_amp)) ', f=' num2str(wv.listfr(ind_fr))]);
-        for i = 1:length(c_cal_mats)
-                plot(t, c_cal_mats{i}(ind_amp, ind_fr, :)(:)', plot_types{i})
-        endfor
-        xlabel('t (s)');
-        ylabel(varaxislbl);
-        legend(c_legends);
-        legend('location', 'southoutside','orientation','horizontal')
-        print_cpu_indep([data.resdir filesep varshort '_time_' num2str(count, '%02d') '-' num2str(ind_amp, '%02d') '-' num2str(ind_fr, '%02d')], data.cokl)
-        hold off
-
-        % amplitude, allan %<<<2
-        DI.Ts.v = sum(wv.secpoint)./adc.fs;
-        DI.y.v = c_cal_mats{1}(ind_amp, ind_fr, :)(:)';
+        % metawaveform period:
+        DI.Ts.v = T; 
+        DI.y.v = cmm.v(k, l, :)(:)';
         CS.verbose = 0;
         DO_ADEV = qwtb('ADEV', DI, CS);
         DO_OADEV = qwtb('OADEV', DI, CS);
-        figure('visible','off')
-        hold on
-        title(['allan dev. of ' varlong ' (' c_legends{1} '), cal. point: A=' num2str(wv.listamp(ind_amp)) ', f=' num2str(wv.listfr(ind_fr))]);
-        plot(DO_ADEV.tau.v, DO_ADEV.adev.v, '-k')
-        plot(DO_OADEV.tau.v, DO_OADEV.oadev.v, '-r')
-        xlabel('tau (s)');
-        ylabel(['allan dev. of ' varaxislbl]);
-        legend('ADEV', 'OADEV', 'location', 'southoutside','orientation','horizontal')
-        print_cpu_indep([data.resdir filesep varshort '_adev_' num2str(count, '%02d') '-' num2str(ind_amp, '%02d') '-' num2str(ind_fr, '%02d')], data.cokl)
-        hold off
+        DO_MADEV = qwtb('MADEV', DI, CS);
+        cmm.ADEV.tau  = DO_ADEV.tau.v;
+        cmm.ADEV.v    = DO_ADEV.adev.v;
+        cmm.OADEV.tau = DO_OADEV.tau.v;
+        cmm.OADEV.v   = DO_OADEV.oadev.v;
+        cmm.MADEV.tau = DO_MADEV.tau.v;
+        cmm.MADEV.v   = DO_MADEV.madev.v;
 endfunction
 
-function calc_corr(cal_mat, methodname, wv, data, varlong, varshort, varaxislbl) % %<<<1
-        % matrix for correlations: columns are variables, every row is one observation
+function cmm = calc_corr(cmm, wv, data) % %<<<1
+% cmm - calibration matrix method (e.g. cal_mat.A.PSFE)
+
+        % prepare matrices and labels:
         mat = [];
-        axislbls = {};
         count = 0;
         % for frequencies:
-        for j = 1:size(cal_mat,2)
+        for l = 1:wv.L
                 % for amplitudes:
-                for i = 1:size(cal_mat,1)
+                for k = 1:wv.K
                         count = count + 1;
-                        mat = [mat cal_mat(i, j, :)(:)];
-                        axislbl{count} = [num2str(wv.listamp(i)) 'V' num2str(wv.listfr(j)) 'Hz'];
+                        % create matrix with columns as variables, every row is one observation:
+                        mat = [mat cmm.v(k, l, :)(:)];
+                        % create labels:
+                        cmm.corraxislbl{count} = [num2str(wv.listamp(k)) 'V' num2str(wv.listfr(l)) 'Hz'];
                 endfor
         endfor
 
-        pears = corr(mat);
-        spear = spearman(mat);
+        % pears correlation %<<<2
+        cmm.pears = corr(mat);
+        % spearmans correlation %<<<2
+        cmm.spear = spearman(mat);
+        % kendall correlation %<<<2
         if data.cokl
                 % takes too much memory, so only on cokl:
-                kend = kendall(mat); 
+                cmm.kend = kendall(mat); 
         endif
-
-        % pearson corr coef %<<<2
-        figure('visible','off')
-        imagesc(pears)
-        colormap('jet');colorbar;
-        pv.ytick = [1:count];
-        pv.yticklabel = axislbl;
-        pv.xtick = [];
-        pv.xticklabel = {};
-        set(gca(),pv)
-
-        offset = 2.5;
-        for i = 1:count
-                ht = text(i, count + offset, axislbl{i});
-                set(ht,'rotation',90);
-        endfor
-
-        title([varlong, ', pearson corr.']);
-        print_cpu_indep([data.resdir filesep varshort '_corr_pears_' methodname], data.cokl)
-
-        % spearman corr coef %<<<2
-        figure('visible','off')
-        imagesc(spear)
-        colormap('jet');colorbar;
-        pv.ytick = [1:count];
-        pv.yticklabel = axislbl;
-        pv.xtick = [];
-        pv.xticklabel = {};
-        set(gca(),pv)
-
-        offset = 2.5;
-        for i = 1:count
-                ht = text(i, count + offset, axislbl{i});
-                set(ht,'rotation',90);
-        endfor
-
-        title([varlong, ', spearman corr.']);
-        print_cpu_indep([data.resdir filesep varshort '_corr_spear_' methodname], data.cokl)
-
-        if data.cokl
-                % kendall corr coef %<<<2
-                figure('visible','off')
-                imagesc(kend)
-                colormap('jet');colorbar;
-                pv.ytick = [1:count];
-                pv.yticklabel = axislbl;
-                pv.xtick = [];
-                pv.xticklabel = {};
-                set(gca(),pv)
-
-                offset = 2.5;
-                for i = 1:count
-                        ht = text(i, count + offset, axislbl{i});
-                        set(ht,'rotation',90);
-                endfor
-
-                title([varlong, ', kendall corr.']);
-                print_cpu_indep([data.resdir filesep varshort '_corr_kend_' methodname], data.cokl)
-        endif
-
-
 
 endfunction
 

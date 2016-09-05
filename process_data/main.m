@@ -3,47 +3,50 @@ close all
 
 % ------------------ settings ------------------ %<<<1
 % filename:
-% how many points ignore at the beginning:
+% how many sampled points should be ignored at the beginning:
 data.filenamepart = '../../data/34/JAWS22_13_D4#1#2_034_ca0p5_four_tone_rep32';
 data.ignorepoints = 61549;
 data.filenamepart = '../../data/39/JAWS22_13_D4#1#2_039_ca0p4_four_tone_rep32';
 data.ignorepoints = 113579;
 data.filenamepart = '../../data/42/JAWS22_13_D4#1#2_042_ca0p5_four_tone_rep32';
 data.ignorepoints = 32869;
-data.filenamepart = '../../data/simulated_data/simulated_data';
-data.ignorepoints = 240000;
 data.filenamepart = '../../data/48sine/JAWS22_13_D4#2_048_ca0p4_sinus_4.8kHz_rep01';
 data.ignorepoints = 48;
 data.filenamepart = '../../data/50sine/JAWS22_13_D4#2_050_ca0p4_sinus_4.8kHz_rep32';
 data.ignorepoints = 2106;
-% plot waveform data of first metaperiod?
+data.filenamepart = '../../data/simulated_data/simulated_data';
+data.ignorepoints = 239999;
+data.filenamepart = '../../data/simulated_data_noise/simulated_data';
+data.ignorepoints = 239999;
+% plot waveform of first metaperiod?
 data.wvplotfirst = 1;
-% plot waveform data of last metaperiod?
+% plot waveform of last metaperiod?
 data.wvplotlast = 1;
-% plot waveform data of ignored points?
+% plot waveform of ignored points?
 data.wvplotignored = 1;
-% after all amplitudes frequency changes...
-% list of amplitudes:
-wv.listamp = [0.1 0.3 0.5 0.7];
+% list of amplitudes in amplitude sections:
 wv.listamp = [0.1];
-% list of frequencies:
-wv.listfr = [150 300 600 1200];
+wv.listamp = [0.1 0.3 0.5 0.7];
+% list of frequencies in frequency sections:
 wv.listfr = [150].*32;
 wv.listfr = [150];
-% number of periods in every amplitude and frequency section:
-wv.secperiods = 10;
+wv.listfr = [150 300 600 1200];
+% number of periods in every amplitude section:
+wv.P = 10;
 % path to the qwtb:
 qwtbpath = '~/qwtb/qwtb';
 
 % ------------------ small variables documentation ------------------ %<<<1
 % adc - structure, informations about analogue-to-digital converter
-% wv - structure, informations about (meta)waveform
-% data - structure, informations about data. contains different data for every metawaveform
+% wv - structure, informations about metawaveform
+% data - structure, informations about sampled data. some fields are different for every metawaveform
 % ------------------ basic setup ------------------ %<<<1
 % create results directory
-data.resdir = [data.filenamepart '_result' filesep];
-if ~exist(data.resdir, 'dir')
-        mkdir(data.resdir);
+[tmpdir tmpname] = fileparts(data.filenamepart);
+data.resname = [tmpdir filesep 'result_' tmpname];
+data.plotdir = [tmpdir filesep 'result_plots_' tmpname filesep];
+if ~exist(data.plotdir, 'dir')
+        mkdir(data.plotdir);
 endif
 
 % add QWTB path:
@@ -69,37 +72,31 @@ adc.gain = infogetnumber(measset, 'data gain');
 adc.offset = -1 .* infogetnumber(measset, 'data offset');
 
 % ------------------ pre-calculate ------------------ %<<<1
-% frequencies of sections during whole metaperiod:
-wv.secfr = repmat(wv.listfr, length(wv.listamp), 1);
+% number of amplitude sections:
+wv.K = length(wv.listamp);
+% number of frequency sections:
+wv.L = length(wv.listfr);
+% list of frequencies in amplitude sections during whole metaperiod:
+wv.secfr = repmat(wv.listfr, wv.K, 1);
 wv.secfr = wv.secfr(:)';
-% amplitudes of sections during whole metaperiod:
-wv.secamp = repmat(wv.listamp, 1, length(wv.listfr));
+% list of amplitudes in amplitude sections during whole metaperiod:
+wv.secamp = repmat(wv.listamp, 1, wv.L);
 wv.secamp = wv.secamp(:)';
-% number of points in every amplitude and frequency section:
-wv.secpoint = wv.secperiods./wv.secfr.*adc.fs;
+% number of points sampled by ADC in every amplitude and frequency section:
+wv.secpoint = adc.fs ./ wv.secfr .* wv.P ;
 
-% calculate starting times of sections of first metawaveform
-for i = 1:length(wv.secpoint)
-        if i == 1
-                previouspos = 0;
-        else
-                previouspos = sum(wv.secpoint(1:i-1));
-        endif
-        wv.secstart(i) = previouspos + 1;
-        wv.secend(i) = sum(wv.secpoint(1:i));
+% calculate starting times of all sections of in metawaveform
+tmp = cumsum(wv.secpoint);
+wv.secstart = [0 tmp(1:end-1)] + 1;
+wv.secend = tmp;
+wv.sectimestart = (wv.secstart - 1) ./ adc.fs;
 
-        idrow = find(wv.listamp == wv.secamp(i));
-        idrow = idrow(1);
-        idcol = find(wv.listfr == wv.secfr(i));
-        idcol = idcol(1);
-        wv.sectimestart(i) = (previouspos + 0)./adc.fs;
-        wv.sectimestartgrid(idrow, idcol) = wv.sectimestart(i);
-endfor
+% generate grids for easier use in calculations:
 [wv.gridfr, wv.gridamp] = meshgrid(wv.listamp, wv.listfr);
+wv.gridsectimestart = reshape(wv.sectimestart, wv.K, wv.L);
 
 % ------------------ plot ignored points ------------------ %<<<1
-
-% open file:
+% open data file:
 fid = fopen([data.filenamepart '.bin'], 'r');
 % read ignored points:
 [tmp, count] = fread(fid, data.ignorepoints, 'int32', 0, 'ieee-le');
@@ -108,25 +105,26 @@ fclose(fid);
 
 if (data.wvplotignored)
         figure('visible','off')
+        % no time axis, only count for easy readout of point index
         %t = [1:length(tmp)]./adc.fs;
         plot(tmp, '-+')
         %xlabel('time (s)')
         xlabel('points')
         ylabel('U (V)')
-        print_cpu_indep([data.resdir filesep() 'ignoredpoints'], data.cokl)
+        print_cpu_indep([data.plotdir 'ignoredpoints'], data.cokl)
 endif
 
 % ------------------ parallel processing of data ------------------ %<<<1
 % prepare parameter cell ------------------ %<<<2
 % if not on supercomputer, calculate only part of data: 
 if ~data.cokl
-        data.points = 960000 + data.ignorepoints + 1;
+        data.points = 20*240000 + data.ignorepoints + 1;
 endif
 % create a cell of metawaveform starting positions:
 mwstartpos = [data.ignorepoints + 1 : sum(wv.secpoint) : data.points];
-% vector of times of starts of metaperiods:
-% (first has time == 0)
-tvec = (mwstartpos(1:end-1) - data.ignorepoints - 1)./adc.fs;
+% times of metawaveforms starts:
+% (first one has time == 0)
+data.tvec = (mwstartpos(1:end-1) - data.ignorepoints - 1)./adc.fs;
 
 % saves last id so subfunctions will know some figures should be generated:
 data.lastid = length(mwstartpos) - 1;
@@ -142,7 +140,7 @@ paramcell = cell(length(mwstartpos)-1,1);
 for i = 1:length(mwstartpos)-1
         param.data.id = i;
         param.data.startpoint = mwstartpos(i);
-        param.data.starttime = tvec(i);
+        param.data.starttime = data.tvec(i);
         paramcell{i} = param;
 endfor
 
@@ -154,21 +152,27 @@ else
 endif
 
 % the calculation itself ------------------ %<<<2
-res = parcellfun(procno, @load_metaperiod, paramcell, 'verboselevel', 1);
+res = parcellfun(procno, @load_metawaveform, paramcell, 'verboselevel', 1);
 
 
 % methods for testing purposes:
-%%%res = cellfun(@load_metaperiod, paramcell);
+%%%res = cellfun(@load_waveform, paramcell);
 %%%for i = 1:length(paramcell)
 %%%        i
-%%%        res(i) = load_metaperiod(paramcell{i});
+%%%        res(i) = load_metawaveform(paramcell{i});
 %%%endfor
 
-% ------------------ save data ------------------ %<<<1
-save('-binary', [data.resdir filesep 'proc_data.bin'])
+% ------------------ save data (as safety for the case next calculation is errorneous) ------------------ %<<<1
+save('-binary', data.resname);
+
+% ------------------ calculate concatenated data ------------------ %<<<1
+cres = calc_conc_data(res, wv, adc, data);
+
+% ------------------ save data again (with concatenated data) ------------------ %<<<1
+save('-binary', data.resname);
 
 % ------------------ plot concatenated data ------------------ %<<<1
-calc_conc_data(res, tvec, wv, adc, data)
+plot_conc_data(cres, wv, adc, data);
 
 % ------------------ finish ------------------ %<<<1
 disp('--- finish ---')
