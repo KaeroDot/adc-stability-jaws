@@ -45,6 +45,11 @@ qwtbpath = '~/qwtb/qwtb';
 % wv - structure, informations about metawaveform
 % data - structure, informations about sampled data. some fields are different for every metawaveform
 % ------------------ basic setup ------------------ %<<<1
+% disable saving data on bad exit:
+crash_dumps_octave_core(0)
+sighup_dumps_octave_core (0)
+sigterm_dumps_octave_core (0)
+
 % prevent some QWTB messages:
 warning('off','Octave:shadowed-function')
 
