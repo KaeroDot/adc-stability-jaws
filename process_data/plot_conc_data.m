@@ -1,5 +1,9 @@
 % calculates and plots informations from concatenated data
 function plot_conc_data(cres, wv, adc, data)
+% create plot directory if missing:
+if ~exist(data.plotdir, 'dir')
+        mkdir(data.plotdir);
+endif
 
 % ------------------ plot per method all cal points in one plot ------------------ %<<<1
 plot_cal_mat_one_method(cres.cal_mat.f.PSFE, 'PSFE', 'Frequency', 'f', 'f (Hz)', wv, data);
@@ -111,10 +115,16 @@ function plot_cal_point_all_methods(k, l, count, t, c_cal_mats, c_legends, varlo
         title(['allan dev. of ' varlong ' (' c_legends{1} '), cal. point: A=' num2str(wv.listamp(k)) ', f=' num2str(wv.listfr(l))]);
         plot(c_cal_mats{1}.ADEV.tau, c_cal_mats{1}.ADEV.v, '-k')
         plot(c_cal_mats{1}.OADEV.tau, c_cal_mats{1}.OADEV.v, '-r')
-        plot(c_cal_mats{1}.MADEV.tau, c_cal_mats{1}.MADEV.v, '-b')
+        if isfield(c_cal_mats{1}, 'MADEV')
+                plot(c_cal_mats{1}.MADEV.tau, c_cal_mats{1}.MADEV.v, '-b')
+        endif
         xlabel('tau (s)');
         ylabel(['allan dev. of ' varaxislbl]);
-        legend('ADEV', 'OADEV', 'MADEV', 'location', 'southoutside','orientation','horizontal')
+        if isfield(c_cal_mats{1}, 'MADEV')
+                legend('ADEV', 'OADEV', 'MADEV', 'location', 'southoutside','orientation','horizontal')
+        else
+                legend('ADEV', 'OADEV', 'location', 'southoutside','orientation','horizontal')
+        endif
         print_cpu_indep([data.plotdir varshort '_adev_' num2str(count, '%02d') '-' num2str(k, '%02d') '-' num2str(l, '%02d')], data.cokl)
         hold off
 endfunction
@@ -173,7 +183,7 @@ function plot_corr(cmm, methodname, varlong, varshort, varaxislbl, wv, data) % %
         title([varlong, ', spearman corr.']);
         print_cpu_indep([data.plotdir varshort '_corr_spear_' methodname], data.cokl)
 
-        if data.cokl
+        if isfield(cmm, 'kend')
                 % kendall corr coef %<<<2
                 figure('visible','off')
                 imagesc(cmm.kend)

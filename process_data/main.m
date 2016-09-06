@@ -24,6 +24,10 @@ data.wvplotfirst = 1;
 data.wvplotlast = 1;
 % plot waveform of ignored points?
 data.wvplotignored = 1;
+% calculate MADEV?
+data.madev = 0;
+% calculate kendall?
+data.kend = 0;
 % list of amplitudes in amplitude sections:
 wv.listamp = [0.1];
 wv.listamp = [0.1 0.3 0.5 0.7];
@@ -41,13 +45,10 @@ qwtbpath = '~/qwtb/qwtb';
 % wv - structure, informations about metawaveform
 % data - structure, informations about sampled data. some fields are different for every metawaveform
 % ------------------ basic setup ------------------ %<<<1
-% create results directory
+% create results paths:
 [tmpdir tmpname] = fileparts(data.filenamepart);
 data.resname = [tmpdir filesep 'result_' tmpname];
 data.plotdir = [tmpdir filesep 'result_plots_' tmpname filesep];
-if ~exist(data.plotdir, 'dir')
-        mkdir(data.plotdir);
-endif
 
 % add QWTB path:
 addpath(qwtbpath);

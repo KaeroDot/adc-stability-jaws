@@ -38,17 +38,17 @@ for l = 1:wv.L
                 % metawaveform period:
                 T = sum(wv.secpoint) ./ adc.fs;
 
-                cres.cal_mat.f.PSFE =            calc_allan(k, l, cres.cal_mat.f.PSFE, T);
-                cres.cal_mat.f.FFT =             calc_allan(k, l, cres.cal_mat.f.FFT, T);
-                cres.cal_mat.f.FPNLSF =          calc_allan(k, l, cres.cal_mat.f.FPNLSF, T);
-                cres.cal_mat.A.PSFE =            calc_allan(k, l, cres.cal_mat.A.PSFE, T);
-                cres.cal_mat.A.FFT =             calc_allan(k, l, cres.cal_mat.A.FFT, T);
-                cres.cal_mat.A.FPNLSF =          calc_allan(k, l, cres.cal_mat.A.FPNLSF, T);
-                cres.cal_mat.ph.PSFE =           calc_allan(k, l, cres.cal_mat.ph.PSFE, T);
-                cres.cal_mat.ph.FFT =            calc_allan(k, l, cres.cal_mat.ph.FFT, T);
-                cres.cal_mat.ph.FPNLSF =         calc_allan(k, l, cres.cal_mat.ph.FPNLSF, T);
-                cres.cal_mat.SFDR.sinfit =       calc_allan(k, l, cres.cal_mat.SFDR.sinfit, T);
-                cres.cal_mat.SFDR.FFT =          calc_allan(k, l, cres.cal_mat.SFDR.FFT, T);
+                cres.cal_mat.f.PSFE =            calc_allan(k, l, cres.cal_mat.f.PSFE, T, data);
+                cres.cal_mat.f.FFT =             calc_allan(k, l, cres.cal_mat.f.FFT, T, data);
+                cres.cal_mat.f.FPNLSF =          calc_allan(k, l, cres.cal_mat.f.FPNLSF, T, data);
+                cres.cal_mat.A.PSFE =            calc_allan(k, l, cres.cal_mat.A.PSFE, T, data);
+                cres.cal_mat.A.FFT =             calc_allan(k, l, cres.cal_mat.A.FFT, T, data);
+                cres.cal_mat.A.FPNLSF =          calc_allan(k, l, cres.cal_mat.A.FPNLSF, T, data);
+                cres.cal_mat.ph.PSFE =           calc_allan(k, l, cres.cal_mat.ph.PSFE, T, data);
+                cres.cal_mat.ph.FFT =            calc_allan(k, l, cres.cal_mat.ph.FFT, T, data);
+                cres.cal_mat.ph.FPNLSF =         calc_allan(k, l, cres.cal_mat.ph.FPNLSF, T, data);
+                cres.cal_mat.SFDR.sinfit =       calc_allan(k, l, cres.cal_mat.SFDR.sinfit, T, data);
+                cres.cal_mat.SFDR.FFT =          calc_allan(k, l, cres.cal_mat.SFDR.FFT, T, data);
         endfor
 endfor
 
@@ -60,7 +60,7 @@ cres.cal_mat.SFDR.sinfit =       calc_corr(cres.cal_mat.SFDR.sinfit, wv, data);
 
 endfunction %>>>1
 
-function cmm = calc_allan(k, l, cmm, T) %<<<1
+function cmm = calc_allan(k, l, cmm, T, data) %<<<1
 % k - amplitude section index
 % l - frequency section index
 % cmm - calibration matrix method (e.g. cal_mat.A.PSFE)
@@ -72,13 +72,17 @@ function cmm = calc_allan(k, l, cmm, T) %<<<1
         CS.verbose = 0;
         DO_ADEV = qwtb('ADEV', DI, CS);
         DO_OADEV = qwtb('OADEV', DI, CS);
-        DO_MADEV = qwtb('MADEV', DI, CS);
+        if data.madev
+                DO_MADEV = qwtb('MADEV', DI, CS);
+        endif
         cmm.ADEV.tau  = DO_ADEV.tau.v;
         cmm.ADEV.v    = DO_ADEV.adev.v;
         cmm.OADEV.tau = DO_OADEV.tau.v;
         cmm.OADEV.v   = DO_OADEV.oadev.v;
-        cmm.MADEV.tau = DO_MADEV.tau.v;
-        cmm.MADEV.v   = DO_MADEV.madev.v;
+        if data.madev
+                cmm.MADEV.tau = DO_MADEV.tau.v;
+                cmm.MADEV.v   = DO_MADEV.madev.v;
+        endif
 endfunction
 
 function cmm = calc_corr(cmm, wv, data) % %<<<1
@@ -104,8 +108,8 @@ function cmm = calc_corr(cmm, wv, data) % %<<<1
         % spearmans correlation %<<<2
         cmm.spear = spearman(mat);
         % kendall correlation %<<<2
-        if data.cokl
-                % takes too much memory, so only on cokl:
+        if data.kend
+                % takes too much memory, so only if requested:
                 cmm.kend = kendall(mat); 
         endif
 
