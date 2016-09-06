@@ -49,6 +49,10 @@ qwtbpath = '~/qwtb/qwtb';
 [tmpdir tmpname] = fileparts(data.filenamepart);
 data.resname = [tmpdir filesep 'result_' tmpname];
 data.plotdir = [tmpdir filesep 'result_plots_' tmpname filesep];
+% create plot directory if missing:
+if ~exist(data.plotdir, 'dir')
+        mkdir(data.plotdir);
+endif
 
 % add QWTB path:
 addpath(qwtbpath);
@@ -165,7 +169,7 @@ res = parcellfun(procno, @load_metawaveform, paramcell, 'verboselevel', 1);
 %%%endfor
 
 % ------------------ save data (as safety for the case next calculation is errorneous) ------------------ %<<<1
-save('-binary', [data.resname);
+save('-binary', data.resname);
 disp('saved binary data')
 
 % ------------------ calculate concatenated data ------------------ %<<<1
