@@ -153,6 +153,7 @@ else
 endif
 
 % the calculation itself ------------------ %<<<2
+disp('starting calculations of metawaveforms')
 res = parcellfun(procno, @load_metawaveform, paramcell, 'verboselevel', 1);
 
 
@@ -164,13 +165,16 @@ res = parcellfun(procno, @load_metawaveform, paramcell, 'verboselevel', 1);
 %%%endfor
 
 % ------------------ save data (as safety for the case next calculation is errorneous) ------------------ %<<<1
-save('-binary', data.resname);
+save('-binary', [data.resname);
+disp('saved binary data')
 
 % ------------------ calculate concatenated data ------------------ %<<<1
+disp('start of concatenated data calculation')
 cres = calc_conc_data(res, wv, adc, data);
 
 % ------------------ save data again (with concatenated data) ------------------ %<<<1
 save('-binary', data.resname);
+disp('saved second binary data')
 
 % ------------------ plot concatenated data ------------------ %<<<1
 plot_conc_data(cres, wv, adc, data);
