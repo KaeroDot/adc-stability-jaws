@@ -11,13 +11,13 @@ data.ignorepoints = 113579;
 data.filenamepart = '../../data/42/JAWS22_13_D4#1#2_042_ca0p5_four_tone_rep32';
 data.ignorepoints = 32869;
 data.filenamepart = '../../data/48sine/JAWS22_13_D4#2_048_ca0p4_sinus_4.8kHz_rep01';
-data.ignorepoints = 48;
-data.filenamepart = '../../data/50sine/JAWS22_13_D4#2_050_ca0p4_sinus_4.8kHz_rep32';
-data.ignorepoints = 2106;
-data.filenamepart = '../../data/simulated_data/simulated_data';
-data.ignorepoints = 239999;
-data.filenamepart = '../../data/simulated_data_noise/simulated_data';
-data.ignorepoints = 239999;
+data.ignorepoints = 47;
+%data.filenamepart = '../../data/50sine/JAWS22_13_D4#2_050_ca0p4_sinus_4.8kHz_rep32';
+%data.ignorepoints = 2106;
+%data.filenamepart = '../../data/simulated_data/simulated_data';
+%data.ignorepoints = 239999;
+%data.filenamepart = '../../data/simulated_data_noise/simulated_data';
+%data.ignorepoints = 239999;
 % plot waveform of first metaperiod?
 data.wvplotfirst = 1;
 % plot waveform of last metaperiod?
@@ -29,12 +29,12 @@ data.madev = 0;
 % calculate kendall?
 data.kend = 0;
 % list of amplitudes in amplitude sections:
-wv.listamp = [0.1];
 wv.listamp = [0.1 0.3 0.5 0.7];
+wv.listamp = [0.1];
 % list of frequencies in frequency sections:
-wv.listfr = [150].*32;
 wv.listfr = [150];
 wv.listfr = [150 300 600 1200];
+wv.listfr = [150].*32;
 % number of periods in every amplitude section:
 wv.P = 10;
 % path to the qwtb:
@@ -45,20 +45,29 @@ qwtbpath = '~/qwtb/qwtb';
 % wv - structure, informations about metawaveform
 % data - structure, informations about sampled data. some fields are different for every metawaveform
 % ------------------ basic setup ------------------ %<<<1
-% create results paths:
-[tmpdir tmpname] = fileparts(data.filenamepart);
-data.resname = [tmpdir filesep 'result_' tmpname];
-data.plotdir = [tmpdir filesep 'result_plots_' tmpname filesep];
-% create plot directory if missing:
-if ~exist(data.plotdir, 'dir')
-        mkdir(data.plotdir);
-endif
+% prevent some QWTB messages:
+warning('off','Octave:shadowed-function')
 
 % add QWTB path:
 addpath(qwtbpath);
 
 % detection of CMI supercomputer 'cokl':
 data.cokl = iscokl;
+
+% if not calculated on cokl, only partial data, mark it in filename:
+if data.cokl
+        prefix = '';
+else
+        prefix = 'PARTIAL_';
+endif
+% create results paths:
+[tmpdir tmpname] = fileparts(data.filenamepart);
+data.resname = [tmpdir filesep prefix 'result_' tmpname];
+data.plotdir = [tmpdir filesep prefix 'result_plots_' tmpname filesep];
+% create plot directory if missing:
+if ~exist(data.plotdir, 'dir')
+        mkdir(data.plotdir);
+endif
 
 % ------------------ parse info file ------------------ %<<<1
 infostr = infoload([data.filenamepart '.bin']);
