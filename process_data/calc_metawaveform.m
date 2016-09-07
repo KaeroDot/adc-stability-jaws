@@ -34,14 +34,14 @@ for i = 1:length(wv.secpoint)
         DI.y.v = y';
         tmpPSFE = qwtb('PSFE', DI, CS);
         % set phase to -pi +pi
-        tmpPSFE.ph.v = wrap_pm_pi(tmpPSFE.ph.v);
+        tmpPSFE.ph.v = wrapToPi(tmpPSFE.ph.v);
         % ------------------ SP-FFT ------------------ %<<<2
         tmpFFT = qwtb('SP-FFT', DI, CS);
         % ------------------ FPNLSF ------------------ %<<<2
         DI.fest.v = wv.secfr(i);
         tmpFPNLSF = qwtb('FPNLSF', DI, CS);
         % wrap phase to -pi +pi
-        tmpFPNLSF.ph.v = wrap_pm_pi(tmpFPNLSF.ph.v);
+        tmpFPNLSF.ph.v = wrapToPi(tmpFPNLSF.ph.v);
         % ------------------ SFDR ------------------ %<<<2
         tmpSFDR_sinfit = qwtb('SFDR', DI, CS);
         % ------------------ SFDR from FFT ------------------ %<<<2
@@ -85,15 +85,10 @@ for i = 1:length(wv.secpoint)
         [tmp, id] = max(tmpFFT.A.v);
         res.f_FFT(idrow, idcol) = tmpFFT.f.v(id);
         res.A_FFT(idrow, idcol) = tmpFFT.A.v(id);
-        res.ph_FFT(idrow, idcol) = wrap_pm_pi(tmpFFT.ph.v(id));
+        res.ph_FFT(idrow, idcol) = wrapToPi(tmpFFT.ph.v(id));
 
 endfor
 
-endfunction
-
-function phase_out = wrap_pm_pi(phase); %<<<1
-% wraps phase to -pi to +pi
-phase_out = phase - 2*pi*floor( (phase+pi)/(2*pi) );
 endfunction
 
 % vim modeline: vim: foldmarker=%<<<,%>>> fdm=marker fen ft=octave textwidth=1000
