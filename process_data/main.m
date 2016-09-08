@@ -68,6 +68,7 @@ endif
 % create results paths:
 [tmpdir tmpname] = fileparts(data.filenamepart);
 data.resname = [tmpdir filesep prefix 'result_' tmpname];
+data.resname_conc = [tmpdir filesep prefix 'result_conc_' tmpname];
 data.plotdir = [tmpdir filesep prefix 'result_plots_' tmpname filesep];
 % create plot directory if missing:
 if ~exist(data.plotdir, 'dir')
@@ -191,7 +192,7 @@ disp('start of concatenated data calculation')
 cres = calc_conc_data(res, wv, adc, data);
 
 % ------------------ save data again (with concatenated data) ------------------ %<<<1
-save('-binary', data.resname);
+save('-binary', data.resname_conc);
 disp('saved second binary data')
 
 % ------------------ plot concatenated data ------------------ %<<<1

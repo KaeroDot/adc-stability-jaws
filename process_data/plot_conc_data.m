@@ -27,13 +27,18 @@ for l = 1:wv.L
                 count = count + 1;
                 t = data.tvec + wv.gridsectimestart(k, l);
 
+                % frequency
+                plot_cal_point_all_methods_time(k, l, count, data.tvec, {cres.cal_mat.f.PSFE, cres.cal_mat.f.FFT, cres.cal_mat.f.FPNLSF}, {'PSFE', 'FFT', 'FPNLSF'}, 'Frequency', 'f', 'f (Hz)', wv, data);
+                plot_cal_point_all_methods_allan(k, l, count, data.tvec, {cres.cal_p(k, l).f.PSFE, cres.cal_p(k, l).f.FFT, cres.cal_p(k, l).f.FPNLSF}, {'PSFE', 'FFT', 'FPNLSF'}, 'Frequency', 'f', 'f (Hz)', wv, data);
                 % amplitude
-                plot_cal_point_all_methods(k, l, count, data.tvec, {cres.cal_mat.f.PSFE, cres.cal_mat.f.FFT, cres.cal_mat.f.FPNLSF}, {'PSFE', 'FFT', 'FPNLSF'}, 'Frequency', 'f', 'f (Hz)', wv, data);
-                plot_cal_point_all_methods(k, l, count, data.tvec, {cres.cal_mat.A.PSFE, cres.cal_mat.A.FFT, cres.cal_mat.A.FPNLSF}, {'PSFE', 'FFT', 'FPNLSF'}, 'Amplitude', 'A', 'Amp (V)', wv, data);
+                plot_cal_point_all_methods_time(k, l, count, data.tvec, {cres.cal_mat.A.PSFE, cres.cal_mat.A.FFT, cres.cal_mat.A.FPNLSF}, {'PSFE', 'FFT', 'FPNLSF'}, 'Amplitude', 'A', 'Amp (V)', wv, data);
+                plot_cal_point_all_methods_allan(k, l, count, data.tvec, {cres.cal_p(k, l).A.PSFE, cres.cal_p(k, l).A.FFT, cres.cal_p(k, l).A.FPNLSF}, {'PSFE', 'FFT', 'FPNLSF'}, 'Amplitude', 'A', 'Amp (V)', wv, data);
 %               % sfdr
-                plot_cal_point_all_methods(k, l, count, data.tvec, {cres.cal_mat.SFDR.sinfit, cres.cal_mat.SFDR.FFT}, {'sine fit', 'FFT'}, 'Spurious Free Dynam. Ratio', 'SFDR', 'SFDR (dBc)', wv, data);
+                plot_cal_point_all_methods_time(k, l, count, data.tvec, {cres.cal_mat.SFDR.sinfit, cres.cal_mat.SFDR.FFT}, {'sine fit', 'FFT'}, 'Spurious Free Dynam. Ratio', 'SFDR', 'SFDR (dBc)', wv, data);
+                plot_cal_point_all_methods_allan(k, l, count, data.tvec, {cres.cal_p(k, l).SFDR.sinfit, cres.cal_p(k, l).SFDR.FFT}, {'sine fit', 'FFT'}, 'Spurious Free Dynam. Ratio', 'SFDR', 'SFDR (dBc)', wv, data);
 %               % phase
-                plot_cal_point_all_methods(k, l, count, data.tvec, {cres.cal_mat.ph.PSFE, cres.cal_mat.ph.FFT, cres.cal_mat.ph.FPNLSF}, {'PSFE', 'FFT', 'FPNLSF'}, 'Phase', 'ph', 'ph (rad)', wv, data);
+                plot_cal_point_all_methods_time(k, l, count, data.tvec, {cres.cal_mat.ph.PSFE, cres.cal_mat.ph.FFT, cres.cal_mat.ph.FPNLSF}, {'PSFE', 'FFT', 'FPNLSF'}, 'Phase', 'ph', 'ph (rad)', wv, data);
+                plot_cal_point_all_methods_allan(k, l, count, data.tvec, {cres.cal_p(k, l).ph.PSFE, cres.cal_p(k, l).ph.FFT, cres.cal_p(k, l).ph.FPNLSF}, {'PSFE', 'FFT', 'FPNLSF'}, 'Phase', 'ph', 'ph (rad)', wv, data);
 
         endfor
 endfor
@@ -81,7 +86,7 @@ function plot_cal_mat_one_method(cmm, methodname, varlong, varshort, varaxislbl,
         hold off
 endfunction
 
-function plot_cal_point_all_methods(k, l, count, t, c_cal_mats, c_legends, varlong, varshort, varaxislbl, wv, data) %<<<1
+function plot_cal_point_all_methods_time(k, l, count, t, c_cal_mats, c_legends, varlong, varshort, varaxislbl, wv, data) %<<<1
 % plot time developement for all methods for particular calibration point and allan deviation of the first method
 
 % j - index of current amplitude section
@@ -95,7 +100,7 @@ function plot_cal_point_all_methods(k, l, count, t, c_cal_mats, c_legends, varlo
 % varaxislbl - label for y axis
 
         plot_types = {'k-', 'r-', 'g-', 'b-', 'c-', 'm-'};
-        % time %<<<2
+        % time 
         figure('visible','off')
         hold on
         title([varlong ', cal. point: A=' num2str(wv.listamp(k)) ', f=' num2str(wv.listfr(l))]);
@@ -109,18 +114,34 @@ function plot_cal_point_all_methods(k, l, count, t, c_cal_mats, c_legends, varlo
         print_cpu_indep([data.plotdir varshort '_time_' num2str(count, '%02d') '-' num2str(k, '%02d') '-' num2str(l, '%02d')], data.cokl)
         hold off
 
-        % allan using the first method in c_cal_mats %<<<2
+endfunction
+
+function plot_cal_point_all_methods_allan(k, l, count, t, c_cal_ps, c_legends, varlong, varshort, varaxislbl, wv, data) %<<<1
+% plot time developement for all methods for particular calibration point and allan deviation of the first method
+
+% j - index of current amplitude section
+% l - index of current frequency section
+% count - index of current iteration
+% t - time vector
+% c_cal_ps - cell with calibration-matrix-method for point
+% c_legends - cell with method strings for legends
+% varlong - full name of the variable
+% varshort - shorted name of the variable
+% varaxislbl - label for y axis
+
+        plot_types = {'k-', 'r-', 'g-', 'b-', 'c-', 'm-'};
+        % allan using the first method in c_cal_ps
         figure('visible','off')
         hold on
         title(['allan dev. of ' varlong ' (' c_legends{1} '), cal. point: A=' num2str(wv.listamp(k)) ', f=' num2str(wv.listfr(l))]);
-        plot(c_cal_mats{1}.ADEV.tau, c_cal_mats{1}.ADEV.v, '-k')
-        plot(c_cal_mats{1}.OADEV.tau, c_cal_mats{1}.OADEV.v, '-r')
-        if isfield(c_cal_mats{1}, 'MADEV')
-                plot(c_cal_mats{1}.MADEV.tau, c_cal_mats{1}.MADEV.v, '-b')
+        plot(c_cal_ps{1}.ADEV.tau, c_cal_ps{1}.ADEV.v, '-k')
+        plot(c_cal_ps{1}.OADEV.tau, c_cal_ps{1}.OADEV.v, '-r')
+        if isfield(c_cal_ps{1}, 'MADEV')
+                plot(c_cal_ps{1}.MADEV.tau, c_cal_ps{1}.MADEV.v, '-b')
         endif
         xlabel('tau (s)');
         ylabel(['allan dev. of ' varaxislbl]);
-        if isfield(c_cal_mats{1}, 'MADEV')
+        if isfield(c_cal_ps{1}, 'MADEV')
                 legend('ADEV', 'OADEV', 'MADEV', 'location', 'southoutside','orientation','horizontal')
         else
                 legend('ADEV', 'OADEV', 'location', 'southoutside','orientation','horizontal')
